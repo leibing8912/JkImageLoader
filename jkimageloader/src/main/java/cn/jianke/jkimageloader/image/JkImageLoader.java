@@ -29,6 +29,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import cn.jianke.jkimageloader.cache.DiskLruCache;
 import cn.jianke.jkimageloader.common.AppUtils;
+import cn.jianke.jkimageloader.common.BitmapUtils;
 import cn.jianke.jkimageloader.common.FileUtils;
 import cn.jianke.jkimageloader.common.StringUtils;
 
@@ -99,31 +100,34 @@ public class JkImageLoader {
             // if imageview widget ref is null,just return it
             if (imageView == null)
                 return;
+            HashMap tagMap = (HashMap) imageView.getTag();
+            // get img width
+            int width = 0;
+            if (tagMap.get(IMG_WIDTH_TAG) != null)
+            width = Integer.parseInt(String.valueOf(tagMap.get(IMG_WIDTH_TAG)));
             // set default drawable as img drawable resource
-            if (result.bitmap == null
-                    && StringUtils.isEmpty(result.url)){
+            if (StringUtils.isEmpty(result.url)){
                 // if default drawable weak ref is not null,do this
                 if (result.defaultDrawableWeakRef != null
                         && result.defaultDrawableWeakRef.get() != null){
+                    if (width != 0) {
+                        imageView = resetImgWidthHeight(imageView,
+                                result.bitmap.getWidth(), result.bitmap.getHeight(), width);
+                    }
                     imageView.setImageDrawable(result.defaultDrawableWeakRef.get());
                 }
             }else {
-                HashMap tagMap = (HashMap) imageView.getTag();
                 if (tagMap != null
-                        && tagMap.get(IMG_URL_TAG) != null
-                        && tagMap.get(IMG_WIDTH_TAG) != null) {
+                        && tagMap.get(IMG_URL_TAG) != null) {
                     // get img url
                     String url = String.valueOf(tagMap.get(IMG_URL_TAG));
-                    // get img width
-                    int width = Integer.parseInt(String.valueOf(tagMap.get(IMG_WIDTH_TAG)));
                     // resolve img misplace
                     if (url.equals(result.url) && result.bitmap != null) {
                         // set img bitmap
-                        if (width == 0) {
-                            width = result.bitmap.getWidth();
+                        if (width != 0) {
+                            imageView = resetImgWidthHeight(imageView,
+                                    result.bitmap.getWidth(), result.bitmap.getHeight(), width);
                         }
-                        imageView = resetImgWidthHeight(imageView,
-                                result.bitmap.getWidth(), result.bitmap.getHeight(), width);
                         imageView.setImageBitmap(result.bitmap);
                     }
                 }
@@ -298,15 +302,26 @@ public class JkImageLoader {
             return;
         // if defaultDrawable is not null,set it as default img
         if (defaultDrawable != null){
+            final SoftReference<Bitmap> defaultBitmapSoftRef =
+                    new SoftReference<Bitmap>(BitmapUtils.drawableToBitamp(defaultDrawable));
             // resolve first enter bugs
             mainHander.post(new Runnable() {
                 @Override
                 public void run() {
-                    imageView.setImageDrawable(defaultDrawable);
+                    if (defaultBitmapSoftRef.get() != null) {
+                        ImageView iv = imageView;
+                        if (width != 0) {
+                            iv = resetImgWidthHeight(imageView,
+                                    defaultBitmapSoftRef.get().getWidth(),
+                                    defaultBitmapSoftRef.get().getHeight(), width);
+                        }
+                        iv.setImageBitmap(defaultBitmapSoftRef.get());
+                    }
                 }
             });
             mainHander.obtainMessage(MESSAGE_POST_RESULT, JkImageLoaderResult.getInstance()
-                    .setJkImageLoaderResult(imageView, null, null, defaultDrawable)).sendToTarget();
+                    .setJkImageLoaderResult(imageView, null, defaultBitmapSoftRef.get(),
+                            defaultDrawable)).sendToTarget();
         }
         // if uri is empty,just return it
         if (StringUtils.isEmpty(url))
