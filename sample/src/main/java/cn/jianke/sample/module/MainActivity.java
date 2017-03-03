@@ -61,7 +61,7 @@ public class MainActivity extends AppCompatActivity {
                         "&di=359fb15bb0fa39ec79d4d40f31c7c0df&imgtype=jpg" +
                         "&er=1&src=http%3A%2F%2Fpic21.nipic.com%2F20120524%2F1747338_185448014000_2.jpg";
             }else if (i%5 == 1){
-                model.imgUrl = "https://tixxmgsa.baidu.com/timg?" +
+                model.imgUrl = "https://timgsa.baidu.com/timg?" +
                         "image&quality=80&size=b9999_10000&sec=1488512464305&di=23f96e9ed1a987db2a795d25525632fc" +
                         "&imgtype=0&src=http%3A%2F%2Fwww.lzbs.com.cn%2Fimages%2F2008-12%2F22%2FMona210C.JPG";
             }else if (i%5 == 2){
